@@ -47,22 +47,11 @@ $TERM_BACKGROUND = (Get-Host).UI.RawUI.BackgroundColor
 
 function build-prompt_start ($format) {
     $symbol = "PS"
-    $exitCode = $LASTEXITCODE
    
     $return = "$symbol "
 
     if ($format -ne "raw") {
         Write-Host "$symbol " -NoNewline -ForegroundColor $THEME_START[0] -BackgroundColor $THEME_START[1]
-    }
-
-    if ($exitCode -ne 0) {
-        
-        $return += "$return "
-
-        if ($format -ne "raw") {
-            Write-Host "$exitCode " -NoNewline -ForegroundColor $THEME_START[0] -BackgroundColor $THEME_START[1]
-        }
-
     }
 
     $return += "$flowChar "
@@ -177,35 +166,3 @@ function prompt {
         "$(build-prompt `"short`") "
     }
 }
-# SIG # Begin signature block
-# MIIFcQYJKoZIhvcNAQcCoIIFYjCCBV4CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
-# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUtZXXH6ArmRUE17/ct7LmW5q5
-# yGygggMSMIIDDjCCAfagAwIBAgIQLtQJEVM1nr9LdIqLeRCPBDANBgkqhkiG9w0B
-# AQsFADAUMRIwEAYDVQQDDAlsb2NhbGhvc3QwHhcNMTkwMjI4MDgyNTMyWhcNMjAw
-# MjI4MDg0NTMyWjAUMRIwEAYDVQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEB
-# AQUAA4IBDwAwggEKAoIBAQDJPoMBS9CJLmxMuA2suYaoX1/yXgQLKUxidHxybOrb
-# GqmpO0IKODL5pG0xwTPDsf7xe3Jr9njtszFP7i+X4xLJtpJrxJnduT5Qh+v6TOac
-# Jchspj2iibsk4Q1j/jo8c37VkkyL3pVvv4gA3FympWRUGP3rBNq+tuYEZXIKmmWb
-# Y0+Fltpm6pJRGjL62it+/5e8TaUrAmEeZaZdCa/Jz6axBa84agGbyYNnfxua/lqQ
-# 7NOZoGTCzSLOfztxEgcB1EanN6j10S4tLewl9fjq/0gaQCXeAElUkY368LO9CX0e
-# 2Ktk8xDPba4Eew+Ajy5V7YNlvkdp1L3UaLD8rxGtUkZVAgMBAAGjXDBaMA4GA1Ud
-# DwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAUBgNVHREEDTALgglsb2Nh
-# bGhvc3QwHQYDVR0OBBYEFPhdCcjNJdfTdTPYvkXrtxpc2MSMMA0GCSqGSIb3DQEB
-# CwUAA4IBAQDGWDGWoXbCx62Wsk80LIEQMR25fKTLN1bFfAUPIm9rDaHR3zzt2sJ3
-# p73rlo9qvTNgjVonmZmMzeRJqjaUea1qKjZ3DMZqbJFvrm2B0savkD8e0oEmsabE
-# ITFGCP50Rumhemv9AMMGbzF6R0TVALaIte8ykZ/nJsCEMNOAN4pp2t75GpHv/XkB
-# CKVQDV5FbtqXjymW/NV3rF8mlXw10WdHZHaPExCPGxaNKo7kJ3ucF4yCcQ/Bn+6Y
-# AbavTGOJbYFM7pC2nvJ8ZYzDfpyL2ZAY3NGFGbCI9dgSoFebiET0pR4vJ5Blqi/p
-# HEqG0w07U4OreM19FtsTt0s+EUc7hreNMYIByTCCAcUCAQEwKDAUMRIwEAYDVQQD
-# DAlsb2NhbGhvc3QCEC7UCRFTNZ6/S3SKi3kQjwQwCQYFKw4DAhoFAKB4MBgGCisG
-# AQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQw
-# HAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFBW/
-# SEi3srQ3vDjRzOwRS7iR+y4aMA0GCSqGSIb3DQEBAQUABIIBAJkOWTs5IU3LwPaH
-# NvB6mzwOX2DeWkY1YwwVq5JLxaC32SBim8GW+qw7JCEL1E9rwOglpKSyZNw3walY
-# /H/Z4fKLkpT7WbcBsrtleo9zW+bMebL4TxIek0UjUEoTS3AfgjDp/lpuSCjvoozd
-# V1upbBpuH0035KZgkCCwxyRZESqg3LiWtKKmZ+6lc3KyxI1hNaErq8O7drsUXRYx
-# rSknTYJ1y27zJyzSvUOyJLKaad1qDbZy1VN+e0sCEUh3pJkJiPc2UqBAdRzWiCGe
-# 7rK30QOvFztFV8Hudz/n80OzhmEqvBXuOuLOB0Qt5MzDj7DJDgfSjepbbaPElpd0
-# rZFbBrc=
-# SIG # End signature block
