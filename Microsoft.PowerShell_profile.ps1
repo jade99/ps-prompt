@@ -1,168 +1,140 @@
-﻿#author Philipp Wurzer
+<#  Windows PowerShell 7 - Custom Prompt
+    Author: Philipp '!jⱯde99_' Wurzer #>
 
-chcp 65001 #UTF-8 für Legacy Unterstüzung
+# -----===== Constants =====-----
 $OutputEncoding = [System.Text.Encoding]::Unicode
-clear
 
-<# Install an powerline font from https://github.com/powerline/fonts
-   or patch an existing font to include powerline characters using:
-   https://github.com/powerline/fontpatcher (python required) #>
-$flowChar = ""
+$SYM_SEG1 = [char] 0xe0ba
+$SYM_SEG2 = [char] 0xe0bc
 
-<# recommended color pallet:
-   Color:       R   B   G   Default
-   
-   Black:       12  12  12  Background
-   DarkBlue:    0   55  218
-   DarkGreen:   19  161 14
-   DarkCyan:    58  150 221
-   DarkRed:     197 15  31
-   DarkMagenta: 138 28  152
-   DarkYellow:  193 156 0
-   Gray:        204 204 204 Foreground
-   DarkGray:    118 118 118 Highlight Foreground
-   Blue:        59  120 255
-   Green:       22  198 12
-   Cyan:        97  214 214
-   Red:         231 72  68
-   Magenta:     180 0   158
-   Yellow:      249 247 165
-   White:       242 242 242 Highlight Background #>
+$SYM_HOME = [char] 0xf015
+$SYM_FOLDER = [char] 0xf07c
+$SYM_SHARE = [char] 0xf98c
+$SYM_CUBES = [char] 0xf1b3
 
-#Theme configuration: Foreground, Background
-$THEME_START = @("Black", "Yellow")
-$THEME_USER = @("Black", "DarkYellow")
+$SYM_CMD = [char] 0xf641
+$SYM_BOLT = [char] 0xf0e7
+$SYM_CROSS = [char] 0x2718
+$SYM_WIN = [char] 0xe70f
 
+$UI = $Host.UI.RawUI
+$CON_WIDTH = $UI.WindowSize.Width
 
-$THEME_WORKDIR_FILE = @("White", "DarkGreen")
-$THEME_WORKDIR_REG = @("Black", "DarkCyan")
-$THEME_WORKDIR_CERT = @("White", "DarkMagenta")
-$THEME_WORKDIR_ALIAS = @("Black", "Gray")
+$UI.BackgroundColor = 'Black'
+$UI.ForegroundColor = 'Gray'
 
-$THEME_WORKDIR = $THEME_WORKDIR_FILE #DO NOT CHANGE
+Clear-Host
 
+$RawPrompt = ''
 
-$TERM_BACKGROUND = (Get-Host).UI.RawUI.BackgroundColor
+function prompt_start {
+    $Out = $SYM_SEG1
+    $RawPrompt += $Out
 
+    Write-Host -Object $Out -ForegroundColor DarkGray -BackgroundColor Black -NoNewline
 
-function build-prompt_start ($format) {
-    $symbol = "PS"
-   
-    $return = "$symbol "
+    # -----===== Check if Administrator =====-----
+    $CurrentPrincipal = New-Object -TypeName System.Security.Principal.WindowsPrincipal -ArgumentList @([System.Security.Principal.WindowsIdentity]::GetCurrent())
+    if ($CurrentPrincipal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        $Out = " $SYM_BOLT"
+        $RawPrompt += $Out
 
-    if ($format -ne "raw") {
-        Write-Host "$symbol " -NoNewline -ForegroundColor $THEME_START[0] -BackgroundColor $THEME_START[1]
+        Write-Host -Object $Out -ForegroundColor DarkYellow -BackgroundColor DarkGray -NoNewline
     }
 
-    $return += "$flowChar "
-
-    if ($format -ne "raw") {
-        Write-Host "$flowChar " -NoNewline -ForegroundColor $THEME_START[1] -BackgroundColor $THEME_USER[1]
-    }
+    $Out = " $SYM_WIN $env:COMPUTERNAME "
+    $RawPrompt += $Out
     
-    return $return
+    Write-Host -Object $Out -ForegroundColor Cyan -BackgroundColor DarkGray -NoNewline
 }
 
+function prompt_pwd {
+    $Out = $SYM_SEG1
+    $RawPrompt += $Out
 
+    Write-Host -Object $Out -ForegroundColor Red -BackgroundColor DarkGray -NoNewline
 
-function build-prompt_user ($format) {
-    $user = $env:USERNAME
-    $domain = $env:USERDOMAIN
-    $computername = $env:COMPUTERNAME
+    $CurrentLocation = Get-Location
+    $Location = ''
 
-    $return = ""
-
-    if ("$domain" -ne "$computername" -and $format -ne "short") {
-        $return += "\\$domain\"
-
-        if ($format -ne "raw") {
-            Write-Host "\\$domain\" -NoNewline -ForegroundColor $THEME_USER[0] -BackgroundColor $THEME_USER[1]
-        }
+    $CurrentLeaf = $CurrentLocation
+    if ($CurrentLocation.Path -ne "$($CurrentLocation.Drive.Name):\") {
+        $CurrentLeaf = Split-Path -Path $CurrentLocation.Path -Leaf
     }
 
-    $return += "$user@$computername "
+    $HomePattern = "^$([regex]::Escape($env:USERPROFILE))"
+    $SharePattern = "^$([regex]::Escape('Microsoft.PowerShell.Core\FileSystem::'))"
 
-        if ($format -ne "raw") {
-            Write-Host "$user" -NoNewline -ForegroundColor $THEME_USER[0] -BackgroundColor $THEME_USER[1]
-            if ($format -eq "full") {
-                Write-Host "@$computername " -NoNewline -ForegroundColor $THEME_USER[0] -BackgroundColor $THEME_USER[1]
-            }
-        }
+    $ProviderSym = ''
+    switch ($CurrentLocation.Provider.Name) {
+        'FileSystem' {
+            if ($CurrentLocation.Path -match $HomePattern) {
+                $ProviderSym = $SYM_HOME
+                $Location = $CurrentLocation.Path -replace $HomePattern,"$ProviderSym ~"
 
-    return $return
-}
+            } elseif ($CurrentLocation.Path -match $SharePattern) {
+                $ProviderSym = $SYM_SHARE
+                $Location = $CurrentLocation.Path -replace $SharePattern,"$ProviderSym "
 
-
-
-function build-prompt_workdir ($format) {
-    $pwd = Get-Location
-    $provider = (Get-Location).Provider.Name
-
-    if ("$provider" -eq "Registry") {
-        $THEME_WORKDIR = $THEME_WORKDIR_REG
-    } elseif ("$provider" -eq "Certificate") {
-        $THEME_WORKDIR = $THEME_WORKDIR_CERT
-    } elseif ("$provider" -eq "Alias") {
-        $THEME_WORKDIR = $THEME_WORKDIR_ALIAS
-    }
-
-    $return += "$flowChar "
-    if ($format -ne "raw") {
-        Write-Host "$flowChar " -NoNewline -ForegroundColor $THEME_USER[1] -BackgroundColor $THEME_WORKDIR[1]
-    }
-
-
-    $return = ""
-
-    if ("$pwd" -eq "$env:USERPROFILE") {
-        $return += "~ "
-        
-        if ($format -ne "raw") {
-            Write-Host "~ " -NoNewline -ForegroundColor $THEME_WORKDIR[0] -BackgroundColor $THEME_WORKDIR[1]
-        }
-    } else {
-        $pwdShortShare = "$pwd".Replace('Microsoft.PowerShell.Core\FileSystem::','')
-        $return += "$pwdShortShare "
-
-        if ($format -ne "raw") {
-            if ($format -eq "full" -or $pwdShortShare -like '*$' -or $pwdShortShare -like 'Cert:\' -or $pwdShortShare -like 'Alias:\') {
-                Write-Host "$pwdShortShare " -NoNewline -ForegroundColor $THEME_WORKDIR[0] -BackgroundColor $THEME_WORKDIR[1]
             } else {
-                Write-Host "$($pwd | Split-Path -Leaf) " -NoNewline -ForegroundColor $THEME_WORKDIR[0] -BackgroundColor $THEME_WORKDIR[1]
+                $ProviderSym = $SYM_FOLDER
+                $Location = "$ProviderSym $($CurrentLocation.Path)"
+
             }
+        }
+
+        'Registry' {
+            $ProviderSym = $SYM_CUBES
+            $Location = "$ProviderSym $($CurrentLocation.Path)"
+        }
+
+        Default {
+            $Location = "$ProviderSym $($CurrentLocation.Path)"
         }
     }
 
-    $return += "$flowChar"
-
-    if ($format -ne "raw") {
-        Write-Host "$flowChar" -NoNewline -ForegroundColor $THEME_WORKDIR[1] -BackgroundColor $TERM_BACKGROUND
+    if ($RawPrompt.Length + $Location.Length -gt $CON_WIDTH / 3) {
+        $Location = "$ProviderSym $($CurrentLocation.Path -eq $env:USERPROFILE ? '~' : $CurrentLeaf)"
     }
-    
-    return $return
- }
 
 
+    $Out = " $Location "
+    $RawPrompt += $Out
 
-function build-prompt ($format) {
-    $return = build-prompt_start $format
-    $return += build-prompt_user $format
-	$return += build-prompt_workdir $format
-
-    if ($format -eq "raw") {
-        return "$return "
-    }
+    Write-Host -Object $Out -ForegroundColor Gray -BackgroundColor Red -NoNewline
+    Write-Host -Object $SYM_SEG2 -ForegroundColor Red -BackgroundColor Black -NoNewline
 }
 
+function prompt_runtime {
+    $Out = ''
+    $ExecDuration = $(Get-History)[-1].Duration
+    if ($ExecDuration.TotalSeconds -ge 100) {
+        $Out = "$([Math]::Round($ExecDuration.TotalSeconds,0))s"
+    } elseif ($ExecDuration.TotalSeconds -ge 1) {
+        $Out = "$([Math]::Round($ExecDuration.TotalSeconds,1))s"
+    } elseif ($ExecDuration.TotalMilliseconds -ge 100) {
+        $Out = "$([Math]::Round($ExecDuration.TotalMilliseconds,0))ms"
+    } else {
+        $Out = "$([Math]::Round($ExecDuration.TotalMilliseconds,1))ms"
+    }
+
+    $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($CON_WIDTH - ($Out.Length + 4)),$UI.CursorPosition.Y)
+
+    Write-Host -Object $SYM_SEG1 -ForegroundColor Magenta -BackgroundColor Black -NoNewline
+    Write-Host -Object " $Out " -ForegroundColor Gray -BackgroundColor Magenta -NoNewline
+    Write-Host -Object $SYM_SEG2 -ForegroundColor Magenta -BackgroundColor Black -NoNewline
+}
 
 function prompt {
-    $TERM_WIDTH = (Get-Host).UI.RawUI.WindowSize.Width
-    $TERM_BACKGROUND = (Get-Host).UI.RawUI.BackgroundColor
+    $CON_WIDTH = $UI.WindowSize.Width
 
-    $prompt = build-prompt "raw"
-    if ("$prompt".Length -lt $TERM_WIDTH/3) {
-        "$(build-prompt `"full`") "
-    } else {
-        "$(build-prompt `"short`") "
+    prompt_start
+    prompt_pwd
+    
+    if ($(Get-History).Length -gt 1) {
+        prompt_runtime
     }
+
+    Write-Host -Object "`n$SYM_CMD" -ForegroundColor Gray -BackgroundColor Black -NoNewline
+    return ' '
 }
