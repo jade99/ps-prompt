@@ -14,11 +14,14 @@ $SYM_CUBES = [char] 0xf1b3
 
 $SYM_CMD = [char] 0xf641
 $SYM_BOLT = [char] 0xf0e7
-$SYM_CROSS = [char] 0x2718
 $SYM_WIN = [char] 0xe70f
+
+$SYM_GIT = [char] 0xf113
 
 $UI = $Host.UI.RawUI
 $CON_WIDTH = $UI.WindowSize.Width
+
+$GIT_REPO = $(git rev-parse --is-inside-work-tree) 2>$null
 
 $UI.BackgroundColor = 'Black'
 $UI.ForegroundColor = 'Gray'
@@ -81,6 +84,10 @@ function prompt_pwd {
                 $Location = "$ProviderSym $($CurrentLocation.Path)"
 
             }
+
+            if ($GIT_REPO -eq 'true') {
+                $Location = $Location.Replace($ProviderSym,$SYM_GIT)
+            }
         }
 
         'Registry' {
@@ -125,12 +132,22 @@ function prompt_runtime {
     Write-Host -Object $SYM_SEG2 -ForegroundColor Magenta -BackgroundColor Black -NoNewline
 }
 
+function prompt_git {
+    $Out = '(git)'
+    
+}
+
 function prompt {
     $CON_WIDTH = $UI.WindowSize.Width
+    $GIT_REPO = $(git rev-parse --is-inside-work-tree) 2>$null
 
     prompt_start
     prompt_pwd
-    
+
+    if ($GIT_REPO -eq 'true') {
+        prompt_git
+    }
+
     if ($(Get-History).Length -gt 0) {
         prompt_runtime
     }
