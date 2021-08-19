@@ -131,7 +131,7 @@ function prompt {
     prompt_start
     prompt_pwd
     
-    if ($(Get-History).Length -gt 1) {
+    if ($(Get-History).Length -gt 0) {
         prompt_runtime
     }
 
