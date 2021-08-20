@@ -125,15 +125,33 @@ function prompt_runtime {
         $Out = "$([Math]::Round($ExecDuration.TotalMilliseconds,1))ms"
     }
 
-    $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($CON_WIDTH - ($Out.Length + 4)),$UI.CursorPosition.Y)
+    $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($UI.CursorPosition.X - ($Out.Length + 3)), $UI.CursorPosition.Y)
 
     Write-Host -Object $SYM_SEG1 -ForegroundColor Magenta -BackgroundColor Black -NoNewline
     Write-Host -Object " $Out " -ForegroundColor Gray -BackgroundColor Magenta -NoNewline
     Write-Host -Object $SYM_SEG2 -ForegroundColor Magenta -BackgroundColor Black -NoNewline
+
+    if ($GIT_REPO -eq 'true') {
+        $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($UI.CursorPosition.X - ($Out.Length + 3)), $UI.CursorPosition.Y)
+    }
 }
 
 function prompt_git {
-    $Out = '(git)'
+    $Out = ''
+
+    $regex = "^([\da-f]*) (?:\((?:HEAD -> ([\dA-Za-z\/\-+.]*)(?:, )?)?(?:tag: ([\dA-Za-z\-+.]*)(?:, )?)?(?:([A-Za-z]*)\/[\dA-Za-z\/\-+.]*(?:, )?)?.*\))?.*$"
+    $matches = $(git log --oneline --decorate -1 | Select-String -Pattern $regex).Matches
+
+    $CommitId = $matches.Groups[1]
+    $Branch = $matches.Groups[2]
+    $Tag = $matches.Groups[3]
+    $Remote = $matches.Groups[4]
+
+    $Out += "$CommitId, $Branch, $Tag, $Remote"
+
+    $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($UI.CursorPosition.X - ($Out.Length + 3)), $UI.CursorPosition.Y)
+
+    Write-Host $Out -NoNewline
     
 }
 
@@ -144,12 +162,14 @@ function prompt {
     prompt_start
     prompt_pwd
 
-    if ($GIT_REPO -eq 'true') {
-        prompt_git
-    }
+    $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($CON_WIDTH - 1), $UI.CursorPosition.Y)
 
     if ($(Get-History).Length -gt 0) {
         prompt_runtime
+    }
+
+    if ($GIT_REPO -eq 'true') {
+        prompt_git
     }
 
     Write-Host -Object "`n$SYM_CMD" -ForegroundColor Gray -BackgroundColor Black -NoNewline
