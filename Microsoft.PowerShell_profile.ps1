@@ -22,6 +22,7 @@ $SYM_PULL = [char] 0xf409
 $SYM_FF = [char] 0xf102
 $SYM_BRANCH = [char] 0xe725
 $SYM_DETACH = [char] 0xf127
+$SYM_LOCAL = [char] 0xf108
 
 $UI = $Host.UI.RawUI
 $CON_WIDTH = $UI.WindowSize.Width
@@ -145,15 +146,15 @@ function prompt_git {
     $Out = ''
     $Status = $(git status)
     
-    $Head = ($Status | Select-String -Pattern '^(?:On Branch|Head detached at)(.+)$').Matches.Groups[1]
+    $Head = $Status | Select-String -Pattern '^(On Branch|HEAD detached at)(.+)$'
     $Remote = $Status | Select-String -Pattern '^Your branch (is (?:up|ahead|behind)|and).*$'
 
     $Out += '{HEAD-name} S +A ~B -C !D | +E ~F -G !H W'
-    $Out = $Out.Replace('{HEAD-name}', $Head)
+    $Out = $Out.Replace('{HEAD-name}', $Head.Matches.Groups[2])
 
     switch ($Remote.Matches.Groups[1].Value) {
         'is up' {
-            $Out = $Out.Replace('S', '--   --')
+            $Out = $Out.Replace('S', '-- --')
             break 
         }
         'is ahead' {
@@ -176,7 +177,11 @@ function prompt_git {
             break;
         }
         default {
-            $Out = $Out.Replace('S', "-- $SYM_DETACH --")
+            if ($Head.Matches.Groups[1].Value -eq 'HEAD detached at') {
+                $Out = $Out.Replace('S', $SYM_DETACH)
+            } else {
+                $Out = $Out.Replace('S', "-- $SYM_LOCAL --")
+            }
             break;
         }
     }
