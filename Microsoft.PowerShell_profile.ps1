@@ -146,32 +146,27 @@ function prompt_git {
     $Status = $(git status)
     
     $Head = ($Status | Select-String -Pattern '^(?:On Branch|Head detached at)(.+)$').Matches.Groups[1]
-    $Remote = $Status | Select-String -Pattern '^Your branch (is (up|ahead|behind)|and).*$'
+    $Remote = $Status | Select-String -Pattern '^Your branch (is (?:up|ahead|behind)|and).*$'
 
     $Out += '{HEAD-name} S +A ~B -C !D | +E ~F -G !H W'
     $Out = $Out.Replace('{HEAD-name}', $Head)
 
-    switch ($Remote.Matches.Groups[1]) {
-        'is' {
-            switch ($Remote.Matches.Groups[2]) {
-                'up' {
-                    $Out = $Out.Replace('S', '--   --')
-                    break 
-                }
-                'ahead' {
-                    $Ahead = $Remote | Select-String -Pattern 'by (\d+) commits?'
-                    $Out = $Out.Replace('S', "+$($Ahead.Matches.Groups[1]) $SYM_PUSH --")
-                    break;
-                }
-                'behind' {
-                    $Behind = $Remote | Select-String -Pattern 'by (\d+) commits?(, .+)?'
-                    if ($Remote.Matches.Groups[2] -eq '') {
-                        $Out = $Out.Replace('S', "--  $SYM_PULL -$($Behind.Matches.Groups[1])")
-                    } else {
-                        $Out = $Out.Replace('S', "-- $SYM_FF -$($Behind.Matches.Groups[1])")
-                    }
-                    break;
-                }
+    switch ($Remote.Matches.Groups[1].Value) {
+        'is up' {
+            $Out = $Out.Replace('S', '--   --')
+            break 
+        }
+        'is ahead' {
+            $Ahead = $Remote.Matches.Groups[0].Value| Select-String -Pattern 'by (\d+) commits?'
+            $Out = $Out.Replace('S', "+$($Ahead.Matches.Groups[1]) $SYM_PUSH --")
+            break;
+        }
+        'is behind' {
+            $Behind = $Remote.Matches.Groups[0].Value | Select-String -Pattern 'by (\d+) commits?(, .+)?'
+            if ($Remote.Matches.Groups[2].Success -eq $False) {
+                $Out = $Out.Replace('S', "--  $SYM_PULL -$($Behind.Matches.Groups[1])")
+            } else {
+                $Out = $Out.Replace('S', "-- $SYM_FF -$($Behind.Matches.Groups[1])")
             }
             break;
         }
