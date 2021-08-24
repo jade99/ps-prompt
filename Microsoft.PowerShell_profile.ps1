@@ -141,7 +141,7 @@ function prompt_git {
     $Status = $(git status)
     
     $Head = ($Status | Select-String -Pattern '^(?:On Branch|Head detached at)(.+)$').Matches.Groups[1]
-    $Remote = ($Status | Select-String -Pattern "^Your branch is (?:up to date with with '.+'|ahead of '.+' by (\d+) commits?|)\.$");
+    $Remote = ($Status | Select-String -Pattern "^Your branch is (?:up to date with with '.+'|ahead of '.+'|behind '.+') by (\d+) commits?(?:, .*)?\.$");
 
     $Out += '{HEAD-name} S +A ~B -C !D | +E ~F -G !H W'
     $Out = $Out.Replace('{HEAD-name}', $Head)
@@ -149,6 +149,7 @@ function prompt_git {
     $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($UI.CursorPosition.X - ($Out.Length + 3)), $UI.CursorPosition.Y)
 
     Write-Host $Out -NoNewline
+    Write-Host $Remote.Matches.Groups[1]
     
 }
 
