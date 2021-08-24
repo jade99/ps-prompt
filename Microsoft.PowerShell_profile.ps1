@@ -17,6 +17,11 @@ $SYM_BOLT = [char] 0xf0e7
 $SYM_WIN = [char] 0xe70f
 
 $SYM_GIT = [char] 0xf113
+$SYM_PUSH = [char] 0xf40a
+$SYM_PULL = [char] 0xf409
+$SYM_FF = [char] 0xf102
+$SYM_BRANCH = [char] 0xe725
+$SYM_DETACH = [char] 0xf127
 
 $UI = $Host.UI.RawUI
 $CON_WIDTH = $UI.WindowSize.Width
@@ -141,16 +146,49 @@ function prompt_git {
     $Status = $(git status)
     
     $Head = ($Status | Select-String -Pattern '^(?:On Branch|Head detached at)(.+)$').Matches.Groups[1]
-    $Remote = ($Status | Select-String -Pattern "^Your branch is (?:up to date with with '.+'|ahead of '.+'|behind '.+') by (\d+) commits?(?:, .*)?\.$");
+    $Remote = $Status | Select-String -Pattern '^Your branch (is (up|ahead|behind)|and).*$'
 
     $Out += '{HEAD-name} S +A ~B -C !D | +E ~F -G !H W'
     $Out = $Out.Replace('{HEAD-name}', $Head)
 
+    switch ($Remote.Matches.Groups[1]) {
+        'is' {
+            switch ($Remote.Matches.Groups[2]) {
+                'up' {
+                    $Out = $Out.Replace('S', '--   --')
+                    break 
+                }
+                'ahead' {
+                    $Ahead = $Remote | Select-String -Pattern 'by (\d+) commits?'
+                    $Out = $Out.Replace('S', "+$($Ahead.Matches.Groups[1]) $SYM_PUSH --")
+                    break;
+                }
+                'behind' {
+                    $Behind = $Remote | Select-String -Pattern 'by (\d+) commits?(, .+)?'
+                    if ($Remote.Matches.Groups[2] -eq '') {
+                        $Out = $Out.Replace('S', "--  $SYM_PULL -$($Behind.Matches.Groups[1])")
+                    } else {
+                        $Out = $Out.Replace('S', "-- $SYM_FF -$($Behind.Matches.Groups[1])")
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+        'and' {
+            $Diverge = $Status | Select-String -Pattern 'have (\d+) and (\d+) different commits'
+            $Out = $Out.Replace('S', "+$($Diverge.Matches.Groups[1]) $SYM_BRANCH -$($Diverge.Matches.Groups[2])")
+            break;
+        }
+        default {
+            $Out = $Out.Replace('S', "-- $SYM_DETACH --")
+            break;
+        }
+    }
+
     $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($UI.CursorPosition.X - ($Out.Length + 3)), $UI.CursorPosition.Y)
 
     Write-Host $Out -NoNewline
-    Write-Host $Remote.Matches.Groups[1]
-    
 }
 
 function prompt {
