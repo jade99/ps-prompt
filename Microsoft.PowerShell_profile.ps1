@@ -140,8 +140,8 @@ function prompt_git {
     $Out = ''
     $Status = $(git status)
     
-    $Head = ($Status | Select-String -Pattern '^(?:On Branch|Head detached at)(.*)$').Matches.Groups[1]
-    $Remote = ($Status | Select-String -Pattern '^(?:Your branch is up to date with with .*|)$');
+    $Head = ($Status | Select-String -Pattern '^(?:On Branch|Head detached at)(.+)$').Matches.Groups[1]
+    $Remote = ($Status | Select-String -Pattern "^Your branch is (?:up to date with with '.+'|ahead of '.+' by (\d+) commits?|)\.$");
 
     $Out += '{HEAD-name} S +A ~B -C !D | +E ~F -G !H W'
     $Out = $Out.Replace('{HEAD-name}', $Head)
