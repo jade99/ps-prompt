@@ -6,6 +6,7 @@ $OutputEncoding = [System.Text.Encoding]::Unicode
 
 $SYM_SEG1 = [char] 0xe0ba
 $SYM_SEG2 = [char] 0xe0bc
+$SYM_SEG3 = [char] 0xe0bb
 
 $SYM_HOME = [char] 0xf015
 $SYM_FOLDER = [char] 0xf07c
@@ -133,7 +134,10 @@ function prompt_runtime {
 
     $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($UI.CursorPosition.X - ($Out.Length + 3)), $UI.CursorPosition.Y)
 
-    Write-Host -Object $SYM_SEG1 -ForegroundColor Magenta -BackgroundColor Black -NoNewline
+    if ($GIT_REPO -ne 'true') {
+        Write-Host -Object $SYM_SEG1 -ForegroundColor Magenta -BackgroundColor Black -NoNewline
+    }
+
     Write-Host -Object " $Out " -ForegroundColor Gray -BackgroundColor Magenta -NoNewline
     Write-Host -Object $SYM_SEG2 -ForegroundColor Magenta -BackgroundColor Black -NoNewline
 
@@ -149,46 +153,61 @@ function prompt_git {
     $Head = $Status | Select-String -Pattern '^(On Branch|HEAD detached at)(.+)$'
     $Remote = $Status | Select-String -Pattern '^Your branch (is (?:up|ahead|behind)|and).*$'
 
-    $Out += '{HEAD-name} S +A ~B -C !D | +E ~F -G !H W'
-    $Out = $Out.Replace('{HEAD-name}', $Head.Matches.Groups[2])
+    
+    $Out_Head = "$($Head.Matches.Groups[2]) $SYM_SEG1"
+    $Out_Status = ''
 
-    switch ($Remote.Matches.Groups[1].Value) {
-        'is up' {
-            $Out = $Out.Replace('S', '-- --')
-            break 
-        }
-        'is ahead' {
-            $Ahead = $Remote.Matches.Groups[0].Value| Select-String -Pattern 'by (\d+) commits?'
-            $Out = $Out.Replace('S', "+$($Ahead.Matches.Groups[1]) $SYM_PUSH --")
-            break;
-        }
-        'is behind' {
-            $Behind = $Remote.Matches.Groups[0].Value | Select-String -Pattern 'by (\d+) commits?(, .+)?'
-            if ($Remote.Matches.Groups[2].Success -eq $False) {
-                $Out = $Out.Replace('S', "--  $SYM_PULL -$($Behind.Matches.Groups[1])")
-            } else {
-                $Out = $Out.Replace('S', "-- $SYM_FF -$($Behind.Matches.Groups[1])")
+    $GIT_FG = 'DarkGray'
+    $GIT_BG = 'Cyan'
+
+    if ($Remote.Matches.Success -eq $true) {
+        switch ($Remote.Matches.Groups[1].Value) {
+            'is up' {
+                $Out_Status += "-- --"
+                break 
             }
-            break;
-        }
-        'and' {
-            $Diverge = $Status | Select-String -Pattern 'have (\d+) and (\d+) different commits'
-            $Out = $Out.Replace('S', "+$($Diverge.Matches.Groups[1]) $SYM_BRANCH -$($Diverge.Matches.Groups[2])")
-            break;
-        }
-        default {
-            if ($Head.Matches.Groups[1].Value -eq 'HEAD detached at') {
-                $Out = $Out.Replace('S', $SYM_DETACH)
-            } else {
-                $Out = $Out.Replace('S', "-- $SYM_LOCAL --")
+            'is ahead' {
+                $Ahead = $Remote.Matches.Groups[0].Value| Select-String -Pattern 'by (\d+) commits?'
+                $Out_Status += "+$($Ahead.Matches.Groups[1]) $SYM_PUSH --"
+
+                $GIT_BG = 'DarkGreen'
+                $GIT_FG = 'Gray'
+                break;
             }
-            break;
+            'is behind' {
+                $Behind = $Remote.Matches.Groups[0].Value | Select-String -Pattern 'by (\d+) commits?(, .+)?'
+                if ($Remote.Matches.Groups[2].Success -eq $False) {
+                    $Out_Status += "--  $SYM_PULL -$($Behind.Matches.Groups[1])"
+                } else {
+                    $Out_Status += "-- $SYM_FF -$($Behind.Matches.Groups[1])"
+                }
+
+                $GIT_BG += 'Red'
+                $GIT_FG += 'White'
+                break;
+            }
+            'and' {
+                $Diverge = $Status | Select-String -Pattern 'have (\d+) and (\d+) different commits'
+                $Out_Status += "+$($Diverge.Matches.Groups[1]) $SYM_BRANCH -$($Diverge.Matches.Groups[2])"
+
+                $GIT_BG = 'Yellow'
+                $GIT_FG = 'Black'
+                break;
+            }
         }
+    } elseif ($Head.Matches.Groups[1].Value -eq 'HEAD detached at') {
+        $Out_Status += $SYM_DETACH
+    } else {
+        $Out_Status += $SYM_LOCAL
     }
 
+    $Out = "$Out_Head $Out_Status"
     $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($UI.CursorPosition.X - ($Out.Length + 3)), $UI.CursorPosition.Y)
 
-    Write-Host $Out -NoNewline
+    Write-Host -Object $SYM_SEG1 -ForegroundColor $GIT_BG -BackgroundColor Black -NoNewline
+    Write-Host -Object " $Out_Head" -ForegroundColor $GIT_FG -BackgroundColor $GIT_BG -NoNewline
+    Write-Host -Object " $Out_Status " -ForegroundColor Black -BackgroundColor Gray -NoNewline
+    Write-Host -Object "$SYM_SEG2 " -ForegroundColor Gray -BackgroundColor Magenta -NoNewline
 }
 
 function prompt {
