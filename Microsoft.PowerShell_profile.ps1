@@ -138,16 +138,13 @@ function prompt_runtime {
 
 function prompt_git {
     $Out = ''
+    $Status = $(git status)
+    
+    $Head = ($Status | Select-String -Pattern '^(?:On Branch|Head detached at)(.*)$').Matches.Groups[1]
+    $Remote = ($Status | Select-String -Pattern '^(?:Your branch is up to date with with .*|)$');
 
-    $regex = "^([\da-f]*) (?:\((?:HEAD -> ([\dA-Za-z\/\-+.]*)(?:, )?)?(?:tag: ([\dA-Za-z\-+.]*)(?:, )?)?(?:([A-Za-z]*)\/[\dA-Za-z\/\-+.]*(?:, )?)?.*\))?.*$"
-    $matches = $(git log --oneline --decorate -1 | Select-String -Pattern $regex).Matches
-
-    $CommitId = $matches.Groups[1]
-    $Branch = $matches.Groups[2]
-    $Tag = $matches.Groups[3]
-    $Remote = $matches.Groups[4]
-
-    $Out += "$CommitId, $Branch, $Tag, $Remote"
+    $Out += '{HEAD-name} S +A ~B -C !D | +E ~F -G !H W'
+    $Out = $Out.Replace('{HEAD-name}', $Head)
 
     $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($UI.CursorPosition.X - ($Out.Length + 3)), $UI.CursorPosition.Y)
 
