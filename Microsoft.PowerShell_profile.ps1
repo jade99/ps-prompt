@@ -1,5 +1,8 @@
 <#  Windows PowerShell 7 - Custom Prompt
-    Author: Philipp '!jⱯde99_' Wurzer #>
+    Author: Philipp '!jⱯde99_' Wurzer 
+    
+    Use with CaskaydiaCove NFM, Version 2111.001
+#>
 
 # -----===== Constants =====-----
 $OutputEncoding = [System.Text.Encoding]::Unicode
@@ -11,6 +14,12 @@ $SYM_HOME = [char] 0xf015
 $SYM_FOLDER = [char] 0xf07c
 $SYM_SHARE = [char] 0xf98c
 $SYM_CUBES = [char] 0xf1b3
+$SYM_CERT = ([char] 0xdb84, [char] 0xdd87) -join ''
+$SYM_WSMAN = [char] 0xeb23
+$SYM_FUNC = ([char] 0xdb82, [char] 0xdc71) -join ''
+$SYM_VAR = [char] 0xe691
+$SYM_ENV = [char] 0xebb8
+$SYM_AT = ([char] 0xdb80, [char] 0xdc65) -join ''
 
 $SYM_CMD = [char] 0xf641
 $SYM_BOLT = [char] 0xf0e7
@@ -23,7 +32,7 @@ $CON_WIDTH = $UI.WindowSize.Width
 $UI.BackgroundColor = 'Black'
 $UI.ForegroundColor = 'Gray'
 
-Clear-Host
+#Clear-Host
 
 $RawPrompt = ''
 
@@ -85,6 +94,36 @@ function prompt_pwd {
 
         'Registry' {
             $ProviderSym = $SYM_CUBES
+            $Location = "$ProviderSym $($CurrentLocation.Path)"
+        }
+
+        'Certificate' {
+            $ProviderSym = $SYM_CERT
+            $Location = "$ProviderSym $($CurrentLocation.Path)"
+        }
+
+        'WSMan' {
+            $ProviderSym = $SYM_WSMAN
+            $Location = "$ProviderSym $($CurrentLocation.Path)"
+        }
+
+        'Function' {
+            $ProviderSym = $SYM_FUNC
+            $Location = "$ProviderSym $($CurrentLocation.Path)"
+        }
+
+        'Variable' {
+            $ProviderSym = $SYM_VAR
+            $Location = "$ProviderSym $($CurrentLocation.Path)"
+        }
+
+        'Environment' {
+            $ProviderSym = $SYM_ENV
+            $Location = "$ProviderSym $($CurrentLocation.Path)"
+        }
+
+        'Alias' {
+            $ProviderSym = $SYM_AT
             $Location = "$ProviderSym $($CurrentLocation.Path)"
         }
 
