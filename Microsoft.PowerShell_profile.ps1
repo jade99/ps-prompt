@@ -21,7 +21,7 @@ $SYM_VAR = [char] 0xe691
 $SYM_ENV = [char] 0xebb8
 $SYM_AT = ([char] 0xdb80, [char] 0xdc65) -join ''
 
-$SYM_CMD = [char] 0xf641
+$SYM_CMD = ([char] 0xdb80, [char] 0xdd42) -join ''
 $SYM_BOLT = [char] 0xf0e7
 $SYM_WIN = [char] 0xe70f
 
