@@ -9,7 +9,6 @@ $OutputEncoding = [System.Text.Encoding]::Unicode
 
 $SYM_SEG1 = [char] 0xe0ba
 $SYM_SEG2 = [char] 0xe0bc
-$SYM_SEG3 = [char] 0xe0bb
 
 $SYM_HOME = [char] 0xf015
 $SYM_FOLDER = [char] 0xf07c
@@ -193,11 +192,11 @@ function prompt_git {
     $Remote = $Status | Select-String -Pattern '^Your branch (is (?:up|ahead|behind)|and).*$'
 
     
-    $Out_Head = "$($Head.Matches.Groups[2]) $SYM_SEG1"
+    $Out_Head = "$($Head.Matches.Groups[2])"
     $Out_Status = ''
 
-    $GIT_FG = 'DarkGray'
     $GIT_BG = 'Cyan'
+    $GIT_FG = 'Black'
 
     if ($Remote.Matches.Success -eq $true) {
         switch ($Remote.Matches.Groups[1].Value) {
@@ -240,11 +239,12 @@ function prompt_git {
         $Out_Status += $SYM_LOCAL
     }
 
-    $Out = "$Out_Head $Out_Status"
+    $Out = "$Out_Head $SYM_SEG1 $Out_Status"
     $UI.CursorPosition = New-Object -TypeName System.Management.Automation.Host.Coordinates -ArgumentList @($($UI.CursorPosition.X - ($Out.Length + 3)), $UI.CursorPosition.Y)
 
     Write-Host -Object $SYM_SEG1 -ForegroundColor $GIT_BG -BackgroundColor Black -NoNewline
     Write-Host -Object " $Out_Head" -ForegroundColor $GIT_FG -BackgroundColor $GIT_BG -NoNewline
+    Write-Host -Object " $SYM_SEG1" -ForegroundColor Gray -BackgroundColor $GIT_BG -NoNewline
     Write-Host -Object " $Out_Status " -ForegroundColor Black -BackgroundColor Gray -NoNewline
     Write-Host -Object "$SYM_SEG2 " -ForegroundColor Gray -BackgroundColor Magenta -NoNewline
 }
