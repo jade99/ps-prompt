@@ -1,8 +1,4 @@
-<#  Windows PowerShell 7 - Custom Prompt
-    Author: Philipp '!jⱯde99_' Wurzer 
-    
-    Use with CaskaydiaCove NFM, Version 2111.001
-#>
+# Copyright (c) 2026 jade
 
 # -----===== Constants =====-----
 $OutputEncoding = [System.Text.Encoding]::Unicode
